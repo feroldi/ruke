@@ -1,7 +1,10 @@
+pub use self::area_frame_allocator::{AreaFrameAllocator};
+
+pub mod area_frame_allocator;
 
 pub const PAGE_SIZE: usize = 4096;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Frame {
     number: usize,
 }

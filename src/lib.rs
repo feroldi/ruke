@@ -1,42 +1,74 @@
-#![feature(no_std, lang_items, const_fn, unique, core_str_ext)]
+#![feature(no_std,
+           lang_items,
+           const_fn,
+           unique,
+           core_str_ext,
+           iter_cmp,
+           asm)]
+
 #![no_std]
 
 extern crate rlibc;
 extern crate spin;
 extern crate multiboot2;
 
-use vga_buffer::Writer;
 use spin::Mutex;
+
+use memory::{Frame, FrameAllocator, AreaFrameAllocator};
+use cpuio::{Port, UnsafePort};
 
 #[macro_use]
 mod vga_buffer;
 mod memory;
+mod cpuio;
 
 #[no_mangle]
 pub extern fn rust_main(multiboot_info_addr: usize) {
     vga_buffer::clear_screen();
-
-    /*for i in 0..10 {
-        println!("Hello, World! From {}-th loop", i);
-    }*/
     
     let boot_info = unsafe { multiboot2::load(multiboot_info_addr) };
+
+    // Available memory
     let memory_map_tag = boot_info.memory_map_tag()
                                   .expect("Memory map tag required");
 
-    println!("memory areas:");
-    for area in memory_map_tag.memory_areas() {
-        println!("    start: 0x{:x}, length: 0x{:x}", area.base_addr, area.length);
-    }
-
+    // ELF sections
     let elf_sections_tag = boot_info.elf_sections_tag()
                                     .expect("Elf-sections tag required");
 
-    println!("kernel sections:");
-    for section in elf_sections_tag.sections() {
-        println!("    addr: 0x{:x}, size: 0x{:x}, flags: 0x{:x}",
-        section.addr, section.size, section.flags);
-    }
+    // Start and ending of kernel
+    let kernel_start = elf_sections_tag.sections()
+                                       .map(|s| s.addr)
+                                       .min()
+                                       .unwrap();
+
+    let kernel_end = elf_sections_tag.sections()
+                                     .map(|s| s.addr + s.size)
+                                     .max()
+                                     .unwrap();
+
+    // Start and ending of multiboot
+    let multiboot_start = multiboot_info_addr;
+    let multiboot_end = multiboot_start + (boot_info.total_size as usize);
+
+    let mut frame_allocator = memory::AreaFrameAllocator::new(
+        kernel_start as usize, kernel_end as usize,
+        multiboot_start as usize, multiboot_end as usize,
+        memory_map_tag.memory_areas());
+
+
+    let frame = frame_allocator.allocate_frame();
+
+    println!("welcome to ruke");
+    println!("allocated: {:?}", frame);
+
+    static KEYBOARD: Mutex<Port<u8>> = Mutex::new(unsafe {
+        Port::new(0x60)
+    });
+
+    // TODO: make an interface for interrupt handler
+    let code = KEYBOARD.lock().read();
+    println!("port 0x60: {}", code);
 
     loop {}
 }
