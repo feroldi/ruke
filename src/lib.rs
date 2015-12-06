@@ -15,7 +15,7 @@ extern crate multiboot2;
 use spin::Mutex;
 
 use memory::{Frame, FrameAllocator, AreaFrameAllocator};
-use cpuio::{Port, UnsafePort};
+use cpuio::{Port};
 
 #[macro_use]
 mod vga_buffer;
@@ -65,10 +65,12 @@ pub extern fn rust_main(multiboot_info_addr: usize) {
     static KEYBOARD: Mutex<Port<u8>> = Mutex::new(unsafe {
         Port::new(0x60)
     });
-
-    // TODO: make an interface for interrupt handler
-    let code = KEYBOARD.lock().read();
-    println!("port 0x60: {}", code);
+    
+    unsafe {
+        // TODO: make an interface for interrupt handler
+        let code = KEYBOARD.lock().read();
+        println!("port 0x60: {}", code);
+    }
 
     loop {}
 }

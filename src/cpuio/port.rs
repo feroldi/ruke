@@ -1,40 +1,18 @@
 use cpuio::int::{inb, outb, inw, outw, inl, outl};
 
-pub struct Port<T: Int> {
+pub struct Port<T: InOut> {
     port: u16,
     mark: ::core::marker::PhantomData<T>,
 }
 
-pub struct UnsafePort<T: Int> {
-    port: u16,
-    mark: ::core::marker::PhantomData<T>,
+pub unsafe trait InOut {
+    unsafe fn int_in(port: u16) -> Self;
+    unsafe fn int_out(port: u16, value: Self);
 }
 
-pub trait Int {
-    fn int_in(port: u16) -> Self;
-    fn int_out(port: u16, value: Self);
-}
-
-impl<T: Int> Port<T> {
+impl<T: InOut> Port<T> {
     pub const unsafe fn new(port: u16) -> Port<T> {
         Port {
-            port: port,
-            mark: ::core::marker::PhantomData,
-        }
-    }
-
-    pub fn read(&self) -> T {
-        T::int_in(self.port)
-    }
-
-    pub fn write(&self, value: T) {
-        T::int_out(self.port, value)
-    }
-}
-
-impl<T: Int> UnsafePort<T> {
-    pub const unsafe fn new(port: u16) -> UnsafePort<T> {
-        UnsafePort {
             port: port,
             mark: ::core::marker::PhantomData,
         }
@@ -49,17 +27,17 @@ impl<T: Int> UnsafePort<T> {
     }
 }
 
-impl Int for u8 {
-    fn int_in(port: u16) -> u8 { unsafe { inb(port) }}
-    fn int_out(port: u16, value: u8) { unsafe { outb(port, value) }}
+unsafe impl InOut for u8 {
+    unsafe fn int_in(port: u16) -> u8 { inb(port) }
+    unsafe fn int_out(port: u16, value: u8) { outb(port, value) }
 }
 
-impl Int for u16 {
-    fn int_in(port: u16) -> u16 { unsafe { inw(port) }}
-    fn int_out(port: u16, value: u16) { unsafe { outw(port, value) }}
+unsafe impl InOut for u16 {
+    unsafe fn int_in(port: u16) -> u16 { inw(port) }
+    unsafe fn int_out(port: u16, value: u16) { outw(port, value) }
 }
 
-impl Int for u32 {
-    fn int_in(port: u16) -> u32 { unsafe { inl(port) }}
-    fn int_out(port: u16, value: u32) { unsafe { outl(port, value) }}
+unsafe impl InOut for u32 {
+    unsafe fn int_in(port: u16) -> u32 { inl(port) }
+    unsafe fn int_out(port: u16, value: u32) { outl(port, value) }
 }
