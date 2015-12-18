@@ -17,6 +17,12 @@ start:
 
     ; enabling paging
     call setup_page_tables
+
+    ; maps P4 recursively
+    mov eax, p4_table
+    or eax, 0b11 ; present + writable
+    mov [p4_table + 511 * 8], eax
+
     call enable_paging
 
     ; loads the 64-bit GDT
@@ -29,6 +35,7 @@ start:
     mov ss, ax ; stack selector
     mov ds, ax ; data selector
     mov es, ax ; extra selector
+
 
     ; does a far jump to load cs (code selector) into 64-bit
     jmp gdt64.code:long_mode_start
@@ -170,7 +177,7 @@ p3_table:
 p2_table:
     resb 4096
 stack_bottom:
-    ; reserves 4096 (one page) bytes to our stack
-    resb 4096
+    ; reserves 4096 * 2 (one page) bytes to our stack
+    resb 4096 * 2
 stack_top:
 

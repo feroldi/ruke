@@ -3,10 +3,10 @@ global long_mode_start
 section .text
 bits 64
 long_mode_start:
-    extern rust_main
+    extern kmain
 
     call setup_SSE
-    call rust_main
+    call kmain
 
 .os_returned:
     ; rust main returned, print `OS returned!`
@@ -54,3 +54,4 @@ error:
     mov byte [0xb800e], al
     hlt
     jmp error
+

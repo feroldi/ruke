@@ -1,6 +1,10 @@
 pub use self::area_frame_allocator::{AreaFrameAllocator};
+pub use self::paging::test_paging;
+
+use self::paging::PhysicalAddr;
 
 pub mod area_frame_allocator;
+pub mod paging;
 
 pub const PAGE_SIZE: usize = 4096;
 
@@ -14,6 +18,10 @@ impl Frame {
         Frame {
             number: addr / PAGE_SIZE,
         }
+    }
+
+    fn start_addr(&self) -> PhysicalAddr {
+        self.number * PAGE_SIZE
     }
 }
 

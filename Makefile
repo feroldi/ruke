@@ -18,7 +18,13 @@ clean:
 	@rm -r build
 
 run: $(iso)
-	@qemu-system-x86_64 -hda $(iso)
+	@qemu-system-x86_64 -drive format=raw,file=$(iso)
+
+core:
+	rustc --target $(target) -Z no-landing-pads \
+		  --cfg disable_float \
+		  --out-dir ~/.multirust/toolchains/nightly/lib/rustlib/$(target)/lib \
+		  ~/rust/src/libcore/lib.rs
 
 iso: $(iso)
 

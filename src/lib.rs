@@ -1,16 +1,20 @@
-#![feature(no_std,
-           lang_items,
+#![feature(lang_items,
            const_fn,
+           associated_consts,
            unique,
            core_str_ext,
+           core_slice_ext,
            iter_cmp,
            asm)]
 
 #![no_std]
+#![allow(dead_code)]
 
 extern crate rlibc;
 extern crate spin;
 extern crate multiboot2;
+extern crate x86;
+#[macro_use] extern crate bitflags;
 
 use spin::Mutex;
 
@@ -21,9 +25,10 @@ use cpuio::{Port};
 mod vga_buffer;
 mod memory;
 mod cpuio;
+mod utils;
 
 #[no_mangle]
-pub extern fn rust_main(multiboot_info_addr: usize) {
+pub extern fn kmain(multiboot_info_addr: usize) {
     vga_buffer::clear_screen();
     
     let boot_info = unsafe { multiboot2::load(multiboot_info_addr) };
@@ -56,11 +61,9 @@ pub extern fn rust_main(multiboot_info_addr: usize) {
         multiboot_start as usize, multiboot_end as usize,
         memory_map_tag.memory_areas());
 
-
-    let frame = frame_allocator.allocate_frame();
+    memory::test_paging(&mut frame_allocator);
 
     println!("welcome to ruke");
-    println!("allocated: {:?}", frame);
 
     static KEYBOARD: Mutex<Port<u8>> = Mutex::new(unsafe {
         Port::new(0x60)
